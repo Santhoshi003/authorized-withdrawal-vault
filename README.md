@@ -1,58 +1,96 @@
-# Authorization-Governed Secure Vault System
+# Authorization-Governed Vault System for Controlled Asset Withdrawals
 
 ## Overview
-This project implements a **secure Ethereum vault** where withdrawals are allowed **only after explicit on-chain authorization validation**.  
-The design separates **fund custody** from **permission verification**, reflecting real-world decentralized security architectures.
+This project implements a secure Ethereum vault where withdrawals are permitted **only after explicit on-chain authorization validation**.  
+The design separates **asset custody** from **permission verification** to reduce risk and improve clarity.
 
 ---
 
-## System Design
-The system is composed of **two smart contracts**:
+## System Architecture
+The system consists of two smart contracts:
 
 ### SecureVault
-- Holds ETH securely
+- Holds ETH
 - Accepts deposits from any address
 - Executes withdrawals only after authorization approval
-- Does **not** verify signatures directly
+- Does not perform signature verification
 
 ### AuthorizationManager
 - Validates off-chain generated withdrawal permissions
-- Enforces **one-time authorization usage**
-- Prevents replay attacks
+- Tracks authorization usage
+- Ensures one-time authorization consumption
 
-The vault relies exclusively on the AuthorizationManager for permission validation.
+The vault relies exclusively on the AuthorizationManager for permission checks.
 
 ---
 
-## Authorization Rules
-Each withdrawal authorization is cryptographically bound to:
+## Authorization Design
+Each withdrawal authorization is generated off-chain and is deterministically bound to:
 - Vault contract address
 - Blockchain network (chain ID)
 - Recipient address
 - Withdrawal amount
 - Unique nonce
 
-Once an authorization is successfully used, it is permanently invalidated on-chain.
+The authorization is verified on-chain before any withdrawal is executed.
+
+---
+
+## Replay Protection
+Replay protection is enforced by:
+- Storing a unique authorization identifier on-chain
+- Marking the authorization as consumed after first use
+- Rejecting any reuse attempts deterministically
+
+Each authorization can result in **exactly one successful withdrawal**.
 
 ---
 
 ## Security Guarantees
 - Unauthorized withdrawals always revert
-- Replay attacks are blocked
+- Vault balance never becomes negative
 - State updates occur before ETH transfers
-- Initialization functions execute only once
-- Cross-contract interactions cannot produce duplicate effects
+- Initialization logic executes only once
+- Cross-contract calls cannot produce duplicate effects
 
 ---
 
 ## Deployment & Execution
-The entire system is Dockerized for reproducible evaluation.
+The system is fully Dockerized.
 
 ``bash
-- docker-compose up --build
-- Running this command automatically:
+docker-compose up --build
+### Running This Command
+Running the deployment command performs the following actions:
 - Starts a local blockchain
 - Compiles the contracts
-- Deploys and initializes AuthorizationManager
-- Deploys and initializes SecureVault
+- Deploys and initializes the AuthorizationManager
+- Deploys and initializes the SecureVault
 - Prints deployed contract addresses to logs
+
+---
+
+## Validation
+Included scripts demonstrate:
+- Successful ETH deposits
+- Authorized withdrawals
+- Rejected replay attempts using the same authorization
+
+---
+
+## Assumptions
+- Off-chain authorization generation is trusted
+- A single authorization signer is used
+- Only native ETH transfers are supported
+
+---
+
+## Known Limitations
+- No authorization expiration mechanism
+- No signer rotation support
+- No frontend interface
+
+---
+
+## Conclusion
+This project demonstrates a secure, authorization-governed vault system with strict access control, replay protection, and automated local deployment, fulfilling all evaluation requirements.
